@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a focused product, source-adapter, or maintenance improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What becomes easier or safer if this exists?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful version.
+    validations:
+      required: true
+
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy and health-claim considerations
+      description: Explain data handling, uncertainty, and possible medical sensitivity.
+    validations:
+      required: true
+

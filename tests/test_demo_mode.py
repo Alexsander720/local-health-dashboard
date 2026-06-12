@@ -38,6 +38,7 @@ class DemoModeTests(unittest.TestCase):
         self.assertIn("Demo User", html)
         self.assertIn('data-demo-mode="true"', html)
         self.assertIn("Синтетические данные", html)
+        self.assertIn("Math.max(0, Math.floor((Date.now() - then.getTime()) / 1000))", html)
         self.assertNotIn("Alex, 26", html)
 
 

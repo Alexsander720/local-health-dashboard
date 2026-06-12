@@ -4,14 +4,22 @@ A private-by-default health data hub that combines sleep, body composition,
 nutrition, activity, workouts, notes, and cautious AI-assisted insights in one
 local dashboard.
 
+[![CI](https://github.com/Alexsander720/local-health-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Alexsander720/local-health-dashboard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-7dd3c7.svg)](LICENSE)
+
 The project is designed for people whose health history is fragmented across
 wearables and mobile apps. It normalizes those sources into a single timeline,
 shows data quality and freshness, and keeps the personal dataset on the user's
 machine.
 
+![Synthetic Overview](docs/images/overview-desktop.png)
+
 ## Public Demo
 
 The public demo is deterministic, read-only, and uses synthetic data only:
+
+- [Open the live synthetic demo](https://alexsander720.github.io/local-health-dashboard/)
+- [View the first release](https://github.com/Alexsander720/local-health-dashboard/releases/tag/v0.1.0)
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -29,6 +37,23 @@ You can also build a standalone synthetic dashboard:
 ```powershell
 python build_dashboard.py --demo
 ```
+
+<details>
+<summary>More screenshots</summary>
+
+### Mobile Overview
+
+![Synthetic mobile Overview](docs/images/overview-mobile.png)
+
+### Sleep
+
+![Synthetic sleep dashboard](docs/images/sleep-desktop.png)
+
+### Nutrition
+
+![Synthetic nutrition dashboard](docs/images/nutrition-desktop.png)
+
+</details>
 
 ## What It Covers
 
@@ -120,20 +145,18 @@ concurrency, HTML contracts, demo isolation, and responsive browser behavior.
 
 ## Project Status
 
-This is an early OSS candidate built from a working personal system. The
-highest-priority work is tracked in
+This is an early OSS release built from a working personal system. The
+cross-domain Overview is available, and the next work focuses on source
+adapters, data provenance, maintenance automation, and broader testing.
+Priorities are tracked in
 [`docs/PROJECT_AUDIT_AND_ROADMAP.md`](docs/PROJECT_AUDIT_AND_ROADMAP.md).
-
-The next major product milestone is a true overview screen that answers:
-
-1. What changed?
-2. What matters now?
-3. What should I do today?
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues should follow
-[SECURITY.md](SECURITY.md).
+[SECURITY.md](SECURITY.md). General support guidance is in
+[SUPPORT.md](SUPPORT.md), and community expectations are in
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
 

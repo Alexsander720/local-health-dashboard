@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 0.1.0 - 2026-06-12
+
 ### Added
 
 - deterministic read-only public demo mode;
@@ -12,7 +14,15 @@ All notable changes to this project will be documented in this file.
 - contextual KPI cards for every dashboard section;
 - source freshness and runtime job status;
 - schema validation and legacy migration for manual body measurements;
-- contributor and security documentation.
+- contributor, support, security, and conduct documentation;
+- issue and pull-request templates plus maintainer ownership metadata;
+- GitHub Actions for tests, dependency auditing, CodeQL, and synthetic GitHub
+  Pages deployment.
+
+### Fixed
+
+- future-dated synthetic AI timestamps no longer render as negative relative
+  time.
 
 ### Security
 

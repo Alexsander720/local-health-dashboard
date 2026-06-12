@@ -3710,7 +3710,7 @@ function formatAge(iso) {{
     if (!iso) return '—';
     try {{
         const then = new Date(iso);
-        const sec = Math.floor((Date.now() - then.getTime()) / 1000);
+        const sec = Math.max(0, Math.floor((Date.now() - then.getTime()) / 1000));
         if (sec < 60) return sec + 'с назад';
         if (sec < 3600) return Math.floor(sec/60) + 'м назад';
         if (sec < 86400) return Math.floor(sec/3600) + 'ч назад';
