@@ -1,0 +1,13 @@
+Windows Registry Editor Version 5.00
+
+; Replace PROJECT_DIR_ESCAPED with the project path using doubled backslashes.
+
+[HKEY_CURRENT_USER\Software\Classes\healthrefresh]
+@="URL:Health Dashboard Refresh"
+"URL Protocol"=""
+
+[HKEY_CURRENT_USER\Software\Classes\healthrefresh\DefaultIcon]
+@="wscript.exe,0"
+
+[HKEY_CURRENT_USER\Software\Classes\healthrefresh\shell\open\command]
+@="wscript.exe \"PROJECT_DIR_ESCAPED\\auto_refresh.vbs\""
