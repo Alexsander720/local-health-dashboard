@@ -22,6 +22,7 @@ extend synthetic fixtures in `health_dashboard/demo_data.py`.
 
 ```powershell
 python -m unittest discover -s tests -q
+python scripts/public_release_audit.py
 ```
 
 ## Pull Requests

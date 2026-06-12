@@ -30,6 +30,20 @@ from pathlib import Path
 
 import storage_utils
 
+# When this script runs under pythonw (scheduled task, no console), each child
+# console process (adb, schtasks, sqlite3) makes Windows pop a black console
+# window that flashes for ~1s. CREATE_NO_WINDOW suppresses that flash without
+# changing any behavior. _run() is a drop-in for subprocess.run.
+_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+_subprocess_run = subprocess.run
+
+
+def _run(*args, **kwargs):
+    if os.name == "nt":
+        kwargs["creationflags"] = kwargs.get("creationflags", 0) | _NO_WINDOW
+    return _subprocess_run(*args, **kwargs)
+
+
 PHONE_PORT = 8898
 PHONE_IP_LAST_KNOWN = Path(__file__).parent / "sleep-data" / ".phone_ip"
 
@@ -51,7 +65,7 @@ def _parse_adb_device_serials(output: str) -> list[str]:
 
 def _get_adb_device_serials() -> list[str]:
     try:
-        r = subprocess.run(["adb", "devices", "-l"], capture_output=True, text=True, timeout=5)
+        r = _run(["adb", "devices", "-l"], capture_output=True, text=True, timeout=5)
         if r.returncode == 0:
             return _parse_adb_device_serials(r.stdout)
     except Exception:
@@ -68,7 +82,7 @@ def _get_phone_ip_via_adb() -> str | None:
             if serial:
                 cmd.extend(["-s", serial])
             cmd.extend(["shell", "ip addr show wlan0"])
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            r = _run(cmd, capture_output=True, text=True, timeout=5)
             if r.returncode == 0:
                 import re
                 m = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/", r.stdout)
@@ -203,7 +217,7 @@ def _resolve_phone_base() -> str | None:
 
     # 5) Last resort: set up ADB forward and retry localhost
     try:
-        r = subprocess.run(
+        r = _run(
             ["adb", "forward", f"tcp:{PHONE_PORT}", f"tcp:{PHONE_PORT}"],
             capture_output=True, timeout=5,
         )
@@ -775,7 +789,7 @@ def _download_private_db_via_adb(android_path: str, dest: Path) -> bool:
                 f"chmod 644 '{tmp_phone}' 2>/dev/null; "
                 f"ls -l '{tmp_phone}' 2>/dev/null"
             )
-            copy = subprocess.run(
+            copy = _run(
                 adb + ["shell", "su", "--mount-master", "-c", cp_cmd],
                 capture_output=True,
                 text=True,
@@ -783,13 +797,13 @@ def _download_private_db_via_adb(android_path: str, dest: Path) -> bool:
             )
             if copy.returncode != 0:
                 continue
-            pull = subprocess.run(
+            pull = _run(
                 adb + ["pull", tmp_phone, str(tmp_local)],
                 capture_output=True,
                 text=True,
                 timeout=30,
             )
-            subprocess.run(
+            _run(
                 adb + ["shell", "rm", "-f", tmp_phone],
                 capture_output=True,
                 timeout=8,
@@ -837,7 +851,7 @@ def _wake_mobvoi_via_adb() -> bool:
                     "com.mobvoi.health.companion.HealthActivity"
                 ),
             ])
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+            r = _run(cmd, capture_output=True, text=True, timeout=8)
             if r.returncode == 0 and "Status: ok" in (r.stdout or ""):
                 return True
         except Exception:
@@ -2121,7 +2135,7 @@ def install_task():
         "/TR", f'"{python}" "{script}" --days 14',
         "/RL", "HIGHEST",
     ]
-    result = subprocess.run(cmd, capture_output=True)
+    result = _run(cmd, capture_output=True)
     if result.returncode == 0:
         print(f"Task '{TASK_NAME}' installed (runs every hour)")
     else:
@@ -2132,7 +2146,7 @@ def install_task():
 
 def uninstall_task():
     """Remove scheduled task."""
-    result = subprocess.run(
+    result = _run(
         ["schtasks", "/Delete", "/TN", TASK_NAME, "/F"],
         capture_output=True, text=True,
     )

@@ -22,7 +22,8 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - future-dated synthetic AI timestamps no longer render as negative relative
-  time.
+  time;
+- scheduled Windows sync no longer flashes child-process console windows.
 
 ### Security
 
@@ -30,4 +31,6 @@ All notable changes to this project will be documented in this file.
 - sanitized model-generated HTML;
 - atomic persistence and single-flight background jobs;
 - private health data, credentials, caches, and device-specific scripts excluded
-  from version control.
+  from version control;
+- repeatable public-release audit rejects tracked private sidecars and
+  high-confidence secret formats.

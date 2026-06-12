@@ -29,6 +29,9 @@ jobs:
       - name: Run tests
         run: python -X utf8 -m unittest discover -s tests -q
 
+      - name: Audit public release contents
+        run: python -X utf8 scripts/public_release_audit.py
+
       - name: Build synthetic demo
         run: python -X utf8 build_dashboard.py --demo
 

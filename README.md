@@ -134,6 +134,12 @@ Before publishing a fork, run a secret scan and verify that no real health
 exports, screenshots, cookies, tokens, device identifiers, or AI caches are
 tracked.
 
+The repository includes a high-confidence publication gate:
+
+```powershell
+python scripts/public_release_audit.py
+```
+
 ## Tests
 
 ```powershell
