@@ -8,10 +8,18 @@ class DashboardRenderingTests(unittest.TestCase):
     def test_server_html_render_does_not_rewrite_static_dashboard_file(self):
         original = build_dashboard.HTML_PATH.read_text(encoding="utf-8") if build_dashboard.HTML_PATH.exists() else ""
         try:
-            build_dashboard.build(include_ai=True, server_mode=False)
+            build_dashboard.build(
+                include_ai=True,
+                server_mode=False,
+                demo_mode=True,
+            )
             before = build_dashboard.HTML_PATH.read_text(encoding="utf-8")
 
-            html = build_dashboard.render_html(include_ai=True, server_mode=True)
+            html = build_dashboard.render_html(
+                include_ai=True,
+                server_mode=True,
+                demo_mode=True,
+            )
             after = build_dashboard.HTML_PATH.read_text(encoding="utf-8")
 
             self.assertIn("const SERVER_MODE = true;", html)
@@ -22,7 +30,11 @@ class DashboardRenderingTests(unittest.TestCase):
                 build_dashboard.HTML_PATH.write_text(original, encoding="utf-8")
 
     def test_workout_share_map_surface_is_rendered(self):
-        html = build_dashboard.render_html(include_ai=False, server_mode=True)
+        html = build_dashboard.render_html(
+            include_ai=False,
+            server_mode=True,
+            demo_mode=True,
+        )
 
         self.assertIn('id="workoutShareModal"', html)
         self.assertIn('class="btn sm workout-share-btn"', html)

@@ -7,7 +7,11 @@ from build_dashboard import render_html
 class DashboardV2Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.html = render_html(include_ai=False, server_mode=True)
+        cls.html = render_html(
+            include_ai=False,
+            server_mode=True,
+            demo_mode=True,
+        )
 
     def test_renders_v2_shell_and_sidebar_navigation(self):
         self.assertIn('class="app-shell"', self.html)
