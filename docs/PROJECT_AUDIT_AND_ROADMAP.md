@@ -116,7 +116,7 @@ jobs cannot overlap; the UI can explain which sources are fresh or degraded.
 
 ### P1: Daily usefulness
 
-- [ ] Add an Overview screen with three layers: today, trend, action.
+- [x] Add an Overview screen with three layers: today, trend, action.
 - [x] Replace the global KPI strip with section-specific KPI sets.
 - [ ] Combine the global and category AI hierarchy into one clear insight model.
 - [ ] Turn the period switch into a real data range filter.

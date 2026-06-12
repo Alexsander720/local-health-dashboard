@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - deterministic read-only public demo mode;
+- cross-domain Overview organized as today, trend, and prioritized action;
 - sleep debt and regularity metrics;
 - contextual KPI cards for every dashboard section;
 - source freshness and runtime job status;

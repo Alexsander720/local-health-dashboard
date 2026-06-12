@@ -18,9 +18,11 @@ import argparse
 import json
 import webbrowser
 from datetime import datetime, timedelta
+from html import escape
 from pathlib import Path
 
 import storage_utils
+from health_dashboard.domain.overview import compute_overview
 from health_dashboard.domain.sleep import aggregate_sleep_by_date, compute_sleep_metrics
 from health_dashboard.domain.body import normalize_measurements
 from health_dashboard.demo_data import (
@@ -963,6 +965,54 @@ def compute_section_kpis(data, insights, sleep_metrics, food_profile, notes_stat
             metric("YAZIO", notes_status.get("yazio"), "", "импортировано", "nutrition", "#ff934d"),
             metric("С ПК", notes_status.get("manual"), "", "добавлено вручную", "message", "#8c7cff"),
         ],
+    }
+
+
+def render_overview_fragments(overview: dict) -> dict:
+    signals_html = "".join(
+        f"""
+        <article class="overview-signal {escape(signal.get('tone') or 'neutral')}">
+            <div class="overview-card-icon"><svg class="ui-icon"><use href="#icon-{escape(signal.get('icon') or 'pulse')}"></use></svg></div>
+            <div class="overview-card-copy">
+                <span>{escape(signal.get('label') or '')}</span>
+                <strong>{escape(str(signal.get('value') or '—'))}</strong>
+                <small>{escape(signal.get('detail') or '')}</small>
+            </div>
+            <div class="overview-progress" aria-hidden="true"><i style="width:{max(0, min(100, int(signal.get('progress') or 0)))}%"></i></div>
+        </article>
+        """
+        for signal in overview.get("signals", [])
+    )
+    trends_html = "".join(
+        f"""
+        <article class="overview-trend {escape(trend.get('tone') or 'neutral')}">
+            <div class="overview-card-icon"><svg class="ui-icon"><use href="#icon-{escape(trend.get('icon') or 'pulse')}"></use></svg></div>
+            <div class="overview-card-copy">
+                <span>{escape(trend.get('label') or '')}</span>
+                <strong>{escape(str(trend.get('value') or '—'))}</strong>
+                <small>{escape(trend.get('detail') or '')}</small>
+            </div>
+        </article>
+        """
+        for trend in overview.get("trends", [])
+    )
+    actions_html = "".join(
+        f"""
+        <article class="overview-action {escape(action.get('tone') or 'steady')}">
+            <div class="overview-action-index">{index:02d}</div>
+            <div class="overview-card-icon"><svg class="ui-icon"><use href="#icon-{escape(action.get('icon') or 'target')}"></use></svg></div>
+            <div class="overview-card-copy">
+                <strong>{escape(action.get('title') or '')}</strong>
+                <small>{escape(action.get('detail') or '')}</small>
+            </div>
+        </article>
+        """
+        for index, action in enumerate(overview.get("actions", []), start=1)
+    )
+    return {
+        "signals_html": signals_html,
+        "trends_html": trends_html,
+        "actions_html": actions_html,
     }
 
 
@@ -2440,6 +2490,7 @@ input:focus-visible,textarea:focus-visible,summary:focus-visible {{
     mask-image:linear-gradient(to bottom,#000 0%,#000 78%,transparent 100%);
 }}
 .tab-panel {{ --section-accent:#8c7cff; animation:panel-in .28s ease-out both; }}
+#tab-overview {{ --section-accent:#72e4d0; }}
 #tab-sleep {{ --section-accent:#8c7cff; }}
 #tab-body {{ --section-accent:#2dd4d0; }}
 #tab-nutrition {{ --section-accent:#ff934d; }}
@@ -2447,6 +2498,238 @@ input:focus-visible,textarea:focus-visible,summary:focus-visible {{
 #tab-activity {{ --section-accent:#3f8cff; }}
 #tab-health {{ --section-accent:#ff648a; }}
 #tab-notes {{ --section-accent:#e8ad42; }}
+body[data-active-section="overview"] #aiCard,
+body[data-active-section="overview"] #sectionStats {{
+    display:none;
+}}
+.overview-hero,
+.overview-signals,
+.overview-trends,
+.overview-actions {{
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    background:var(--panel);
+    box-shadow:var(--shadow-card);
+}}
+.overview-hero {{
+    position:relative;
+    min-height:292px;
+    overflow:hidden;
+    padding:34px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    background:
+        radial-gradient(circle at 76% 18%,rgba(114,228,208,.18),transparent 30%),
+        radial-gradient(circle at 92% 75%,rgba(92,132,255,.16),transparent 38%),
+        linear-gradient(135deg,rgba(16,35,55,.98),rgba(10,21,36,.94));
+}}
+.overview-hero:after {{
+    content:"";
+    position:absolute;
+    width:240px;
+    height:240px;
+    right:5%;
+    top:50%;
+    transform:translateY(-50%);
+    border:1px solid rgba(114,228,208,.18);
+    border-radius:50%;
+    box-shadow:
+        0 0 0 34px rgba(114,228,208,.035),
+        0 0 0 70px rgba(92,132,255,.025);
+}}
+.overview-kicker {{
+    position:relative;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:auto;
+    color:#72e4d0;
+    font:600 10px/1 'IBM Plex Mono',monospace;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+}}
+.overview-kicker .ui-icon {{ width:16px; height:16px; }}
+.overview-hero h2 {{
+    position:relative;
+    z-index:1;
+    max-width:760px;
+    margin:0 0 12px;
+    font-size:clamp(28px,3vw,46px);
+    line-height:1.04;
+    letter-spacing:-1.6px;
+}}
+.overview-hero p {{
+    position:relative;
+    z-index:1;
+    max-width:700px;
+    margin:0;
+    color:#b6c2d5;
+    font-size:14px;
+    line-height:1.65;
+}}
+.overview-meta {{
+    position:relative;
+    z-index:1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:22px;
+}}
+.overview-meta span {{
+    padding:7px 10px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:999px;
+    background:rgba(4,12,22,.34);
+    color:#91a0b7;
+    font:500 9px/1 'IBM Plex Mono',monospace;
+}}
+.overview-signals,
+.overview-trends,
+.overview-actions {{
+    padding:18px;
+}}
+.overview-section-head {{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+}}
+.overview-section-head div {{
+    color:var(--text);
+    font-size:13px;
+    font-weight:750;
+}}
+.overview-section-head span {{
+    color:var(--dim);
+    font:500 9px/1 'IBM Plex Mono',monospace;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+}}
+.overview-signal,
+.overview-trend,
+.overview-action {{
+    position:relative;
+    min-width:0;
+    display:grid;
+    align-items:center;
+    gap:12px;
+    border:1px solid rgba(255,255,255,.055);
+    border-radius:13px;
+    background:rgba(255,255,255,.022);
+}}
+.overview-signal {{
+    grid-template-columns:auto minmax(0,1fr);
+    min-height:72px;
+    padding:12px;
+    margin-top:9px;
+    overflow:hidden;
+}}
+.overview-card-icon {{
+    width:38px;
+    height:38px;
+    border-radius:11px;
+    display:grid;
+    place-items:center;
+    color:#72e4d0;
+    background:rgba(114,228,208,.09);
+    border:1px solid rgba(114,228,208,.12);
+}}
+.overview-card-icon .ui-icon {{ width:19px; height:19px; }}
+.overview-card-copy {{
+    min-width:0;
+    display:grid;
+    gap:3px;
+}}
+.overview-card-copy span {{
+    color:#8f9db2;
+    font-size:10px;
+    font-weight:650;
+    letter-spacing:.025em;
+}}
+.overview-card-copy strong {{
+    color:var(--text);
+    font-size:18px;
+    line-height:1.12;
+}}
+.overview-card-copy small {{
+    color:#77869c;
+    font-size:10px;
+    line-height:1.4;
+}}
+.overview-progress {{
+    position:absolute;
+    left:62px;
+    right:12px;
+    bottom:8px;
+    height:2px;
+    overflow:hidden;
+    border-radius:999px;
+    background:rgba(255,255,255,.06);
+}}
+.overview-progress i {{
+    display:block;
+    height:100%;
+    border-radius:inherit;
+    background:#72e4d0;
+}}
+.overview-signal.low .overview-card-icon,
+.overview-trend.attention .overview-card-icon {{
+    color:#ffbd55;
+    background:rgba(255,189,85,.08);
+    border-color:rgba(255,189,85,.12);
+}}
+.overview-signal.low .overview-progress i {{ background:#ffbd55; }}
+.overview-trends {{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+}}
+.overview-trends .overview-section-head {{
+    grid-column:1/-1;
+}}
+.overview-trend {{
+    grid-template-columns:auto minmax(0,1fr);
+    min-height:118px;
+    padding:16px;
+}}
+.overview-trend .overview-card-copy strong {{ font-size:22px; }}
+.overview-actions {{
+    display:flex;
+    flex-direction:column;
+}}
+.overview-action {{
+    grid-template-columns:28px auto minmax(0,1fr);
+    padding:13px;
+    margin-top:9px;
+}}
+.overview-action-index {{
+    color:#526079;
+    font:600 10px/1 'IBM Plex Mono',monospace;
+}}
+.overview-action.priority {{
+    border-color:rgba(140,124,255,.2);
+    background:linear-gradient(90deg,rgba(140,124,255,.08),rgba(255,255,255,.018));
+}}
+.overview-action.priority .overview-card-icon {{
+    color:#b3aaff;
+    border-color:rgba(140,124,255,.18);
+    background:rgba(140,124,255,.11);
+}}
+.overview-action.attention .overview-card-icon {{
+    color:#ffbd55;
+    border-color:rgba(255,189,85,.15);
+    background:rgba(255,189,85,.08);
+}}
+.overview-actions-note {{
+    margin-top:auto;
+    padding:16px 4px 2px;
+    color:#6f7d94;
+    font-size:10px;
+    line-height:1.5;
+}}
 .charts-grid {{ grid-template-columns:repeat(12,minmax(0,1fr)); gap:12px; }}
 .chart-card {{
     grid-column:span 6;
@@ -2622,6 +2905,13 @@ footer {{
         max-width:260px;
     }}
 
+    #tab-overview .overview-hero {{ grid-column:1/9; grid-row:1; }}
+    #tab-overview .overview-signals {{ grid-column:9/-1; grid-row:1; }}
+    #tab-overview .overview-trends {{ grid-column:1/9; grid-row:2; }}
+    #tab-overview .overview-actions {{ grid-column:9/-1; grid-row:2; }}
+    #tab-overview .overview-hero,
+    #tab-overview .overview-trends {{ height:100%; }}
+
     #tab-sleep .sleep-metrics {{ grid-column:1/-1; grid-row:2; margin:0; }}
     #tab-sleep .sleep-phases {{ grid-column:1/9; grid-row:3; }}
     #tab-sleep .sleep-latest {{ grid-column:9/-1; grid-row:3; }}
@@ -2711,6 +3001,10 @@ footer {{
         grid-column:1/-1!important;
     }}
     #tab-foodprofile > .food-profile {{ display:grid; }}
+    .overview-hero,
+    .overview-signals,
+    .overview-trends,
+    .overview-actions {{ margin-bottom:12px; }}
 }}
 @keyframes panel-in {{
     from {{ opacity:0; transform:translateY(6px); }}
@@ -2813,6 +3107,11 @@ footer {{
     .diary-overview,
     .macro-bars {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }}
     .sleep-metrics {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
+    .overview-hero {{ min-height:260px; padding:24px 20px; }}
+    .overview-hero:after {{ width:170px; height:170px; right:-30px; top:25%; }}
+    .overview-hero h2 {{ font-size:30px; letter-spacing:-1px; }}
+    .overview-trends {{ grid-template-columns:1fr; }}
+    .overview-trends .overview-section-head {{ grid-column:auto; }}
 }}
 @media(max-width:430px) {{
     .container {{ padding-left:10px; padding-right:10px; }}
@@ -2835,8 +3134,9 @@ footer {{
 }}
 </style>
 </head>
-<body data-active-section="sleep" data-demo-mode="{demo_mode}">
+<body data-active-section="overview" data-demo-mode="{demo_mode}">
 <svg class="icon-sprite" data-icon-set="tabler-icons" aria-hidden="true">
+    <symbol id="icon-overview" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><path d="M14 17.5h7M17.5 14v7"/></symbol>
     <symbol id="icon-pulse" viewBox="0 0 24 24"><path d="M19.5 13.572l-7.5 7.428l-2.896-2.868m-6.117-8.104A5 5 0 0 1 12 7.006a5 5 0 1 1 7.5 6.572"/><path d="M3 13h2l2 3l2-6l1 3h3"/></symbol>
     <symbol id="icon-sparkles" viewBox="0 0 24 24"><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2m0-12a2 2 0 0 1 2 2a2 2 0 0 1 2-2a2 2 0 0 1-2-2a2 2 0 0 1-2 2M9 18a6 6 0 0 1 6-6a6 6 0 0 1-6-6a6 6 0 0 1-6 6a6 6 0 0 1 6 6"/></symbol>
     <symbol id="icon-sync" viewBox="0 0 24 24"><path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></symbol>
@@ -2872,7 +3172,8 @@ footer {{
 <aside class="sidebar" aria-label="Разделы дашборда">
     <div class="side-logo" title="Health Dashboard"><svg class="ui-icon"><use href="#icon-pulse"></use></svg></div>
     <nav class="tabs">
-        <button class="tab active" data-tab="sleep" style="--section-accent:#8c7cff" onclick="showTab('sleep', this)"><svg class="ui-icon"><use href="#icon-sleep"></use></svg><span>Сон</span></button>
+        <button class="tab active" data-tab="overview" style="--section-accent:#72e4d0" onclick="showTab('overview', this)"><svg class="ui-icon"><use href="#icon-overview"></use></svg><span>Обзор</span></button>
+        <button class="tab" data-tab="sleep" style="--section-accent:#8c7cff" onclick="showTab('sleep', this)"><svg class="ui-icon"><use href="#icon-sleep"></use></svg><span>Сон</span></button>
         <button class="tab" data-tab="body" style="--section-accent:#2dd4d0" onclick="showTab('body', this)"><svg class="ui-icon"><use href="#icon-body"></use></svg><span>Тело</span></button>
         <button class="tab" data-tab="nutrition" style="--section-accent:#ff934d" onclick="showTab('nutrition', this)"><svg class="ui-icon"><use href="#icon-nutrition"></use></svg><span>Питание</span></button>
         <button class="tab" data-tab="foodprofile" style="--section-accent:#45d99a" onclick="showTab('foodprofile', this)"><svg class="ui-icon"><use href="#icon-profile"></use></svg><span>Профиль</span></button>
@@ -2926,7 +3227,42 @@ footer {{
 
 <div class="stats" id="sectionStats" aria-live="polite" aria-label="Ключевые показатели раздела"></div>
 
-<div class="tab-panel active" id="tab-sleep">
+<div class="tab-panel active" id="tab-overview">
+    <section class="overview-hero">
+        <div class="overview-kicker"><svg class="ui-icon"><use href="#icon-sparkles"></use></svg>Сводка без лишнего шума</div>
+        <h2>{overview_headline}</h2>
+        <p>{overview_summary}</p>
+        <div class="overview-meta">
+            <span>состояние → тренд → действие</span>
+            <span>без медицинских диагнозов</span>
+            <span>последние доступные записи</span>
+        </div>
+    </section>
+    <section class="overview-signals">
+        <div class="overview-section-head">
+            <div>Сегодня</div>
+            <span>3 сигнала</span>
+        </div>
+        {overview_signals_html}
+    </section>
+    <section class="overview-trends">
+        <div class="overview-section-head">
+            <div>Что меняется</div>
+            <span>контекст, не оценка</span>
+        </div>
+        {overview_trends_html}
+    </section>
+    <section class="overview-actions">
+        <div class="overview-section-head">
+            <div>Следующие шаги</div>
+            <span>по приоритету</span>
+        </div>
+        {overview_actions_html}
+        <div class="overview-actions-note">Рекомендации опираются только на доступные записи и заданные ориентиры. Это не медицинская диагностика.</div>
+    </section>
+</div>
+
+<div class="tab-panel" id="tab-sleep">
     <div class="category-ai section-insight" id="catAi-sleep" data-category="sleep">
         <div class="cat-ai-head">
             <div class="cat-ai-title"><span class="icon"><svg class="ui-icon"><use href="#icon-sleep"></use></svg></span>AI-разбор сна</div>
@@ -3338,6 +3674,7 @@ footer {{
 <script>
 const DATA = {chart_json};
 const SLEEP_METRICS = {sleep_metrics_json};
+const OVERVIEW = {overview_json};
 const SECTION_KPIS = {section_kpis_json};
 const MEALS = {meals_json};
 const NUTRITION_DIARY = {nutrition_diary_json};
@@ -3434,6 +3771,7 @@ window.addEventListener('hashchange', () => {{
 // --- AI ---
 const PERIOD_LABEL = {{
     day: 'День', week: 'Неделя', month: 'Месяц',
+    overview: 'Обзор',
     sleep: 'Сон', body: 'Тело', nutrition: 'Питание',
     foodprofile: 'Профиль еды',
     activity: 'Активность', health: 'Здоровье',
@@ -5013,8 +5351,8 @@ initServerBridge();
 try {{
     const linkedTab = window.location.hash.slice(1);
     const savedTab = localStorage.getItem('health-dashboard-tab');
-    const initialTab = document.getElementById('tab-' + linkedTab) ? linkedTab : savedTab || 'sleep';
-    showTab(document.getElementById('tab-' + initialTab) ? initialTab : 'sleep');
+    const initialTab = document.getElementById('tab-' + linkedTab) ? linkedTab : savedTab || 'overview';
+    showTab(document.getElementById('tab-' + initialTab) ? initialTab : 'overview');
 }} catch (e) {{}}
 // Set today's date in measurement form
 {{
@@ -5241,6 +5579,8 @@ def render_html(
         target_min=sleep_target_min,
         recent_nights=7,
     )
+    overview = compute_overview(data, sleep_metrics)
+    overview_fragments = render_overview_fragments(overview)
     food_profile = build_demo_food_profile() if demo_mode else load_food_profile()
     measurements = build_demo_measurements() if demo_mode else load_measurements()
 
@@ -5342,6 +5682,11 @@ def render_html(
         sync_notice_text=sync_notice["text"],
         demo_mode="true" if demo_mode else "false",
         demo_banner_hidden="" if demo_mode else "hidden",
+        overview_headline=escape(overview["headline"]),
+        overview_summary=escape(overview["summary"]),
+        overview_signals_html=overview_fragments["signals_html"],
+        overview_trends_html=overview_fragments["trends_html"],
+        overview_actions_html=overview_fragments["actions_html"],
         avg_sleep_h=round(ins.get("avg_sleep_min", 0) / 60, 1) if ins.get("avg_sleep_min") else "—",
         n_sleep=len(sleep_nights),
         sleep_debt_label=format_minutes_short(sleep_metrics.get("debt_min")),
@@ -5392,6 +5737,7 @@ def render_html(
         offline_display="none" if server_mode else "block",
         chart_json=json.dumps(charts, ensure_ascii=False),
         sleep_metrics_json=json.dumps(sleep_metrics, ensure_ascii=False),
+        overview_json=json.dumps(overview, ensure_ascii=False),
         section_kpis_json=json.dumps(section_kpis, ensure_ascii=False),
         meals_json=json.dumps(last_meals, ensure_ascii=False),
         nutrition_diary_json=json.dumps(compute_nutrition_diary(data), ensure_ascii=False),
